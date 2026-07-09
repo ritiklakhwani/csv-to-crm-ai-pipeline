@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# test + coverage
+coverage/
+
+# env — never commit real keys
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# local LLM response cache (LLM_CACHE=true)
+.llm-cache/
+
+# deploy
+.vercel/
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# local planning material — not part of the deliverable
+reference-readmes/
+reference-screenshots/
