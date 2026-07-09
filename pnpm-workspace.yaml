@@ -1,0 +1,9 @@
+packages:
+  - shared
+  - backend
+  - frontend
+
+# pnpm 10 blocks lifecycle scripts by default. esbuild (used by tsup and Vitest) needs its
+# postinstall to fetch the platform binary, so it is allowlisted explicitly.
+onlyBuiltDependencies:
+  - esbuild

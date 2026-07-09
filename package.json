@@ -1,0 +1,30 @@
+{
+  "name": "groweasy-csv-importer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered CSV importer that maps any lead CSV into the GrowEasy CRM schema",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @groweasy/backend --filter @groweasy/frontend dev",
+    "dev:backend": "pnpm --filter @groweasy/backend dev",
+    "dev:frontend": "pnpm --filter @groweasy/frontend dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "preflight": "pnpm --filter @groweasy/backend preflight"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "prettier": "^3.9.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.63.0"
+  }
+}
