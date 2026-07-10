@@ -44,10 +44,16 @@ WHAT TO PRODUCE
 1. mappings: one entry per source column. Set targetField to the CRM field it feeds, or "ignore"
    for junk such as internal IDs, ad IDs and row numbers. Give an honest confidence: below 0.5
    means you are guessing.
+   "ignore" means "this column contains nothing worth keeping". Only use it for genuine junk.
+   A column you cannot map, but whose values a human would want to read, belongs in
+   unmappedColumns, not in "ignore".
 2. compositeColumns: any column that packs several CRM fields into one cell, e.g. a "Name & Contact"
    column holding "Rajesh Patel - 9876543210". Say how to split it.
-3. unmappedColumns: columns with no CRM equivalent whose values are still worth keeping in crm_note.
-   A column being unmapped does NOT mean it is junk.
+   NEVER mark a composite column as "ignore" — it holds real data. Set its targetField to the first
+   CRM field it feeds (usually name), and describe the split here.
+3. unmappedColumns: columns you marked "ignore" whose values a human would still want to read. Their
+   values will be preserved in crm_note. A column you mapped to a CRM field must NEVER appear here.
+   Each column belongs to exactly one group: mapped to a field, composite, unmapped, or ignored.
 4. detectedDateFormat: the single most important thing you produce. "05/13/2026" is undecidable from
    one row, but across the whole sample it is not. If ANY row has a first number above 12, the file
    is DD/MM/YYYY. If any row has a second number above 12, it is MM/DD/YYYY. Report exactly what you
@@ -212,17 +218,39 @@ export function buildExtractionUserPrompt({
   return sections.join('\n\n');
 }
 
-/** The model does not need the per-mapping rationale, and it costs tokens on every batch. */
+/**
+ * Projects the plan down to what Phase 2 actually needs. The per-mapping rationale is dropped: it
+ * would be re-sent with every batch and the extractor never reads it.
+ *
+ * `normaliseMappingPlan` has already guaranteed the groups are disjoint, but `unmappedColumns` and
+ * composite columns are excluded from `ignoredColumns` again here — the cost is two lines, and the
+ * failure it prevents is telling the extractor to discard every phone number in the file.
+ */
 function summarisePlan(plan: MappingPlan) {
+  const composite = new Set(plan.compositeColumns.map((column) => column.sourceColumn));
+  const unmapped = new Set(plan.unmappedColumns);
+
+  const ignored = plan.mappings
+    .filter(
+      (mapping) =>
+        mapping.targetField === 'ignore' &&
+        !composite.has(mapping.sourceColumn) &&
+        !unmapped.has(mapping.sourceColumn),
+    )
+    .map((mapping) => mapping.sourceColumn);
+
+  const mapped = plan.mappings
+    .filter((mapping) => mapping.targetField !== 'ignore' || composite.has(mapping.sourceColumn))
+    .map(
+      (mapping) =>
+        `${mapping.sourceColumn} -> ${composite.has(mapping.sourceColumn) ? 'composite, see below' : mapping.targetField}`,
+    );
+
   return {
     dateFormat: plan.detectedDateFormat,
     defaultCountryCode: plan.detectedDefaultCountryCode,
-    columnMappings: plan.mappings
-      .filter((mapping) => mapping.targetField !== 'ignore')
-      .map((mapping) => `${mapping.sourceColumn} -> ${mapping.targetField}`),
-    ignoredColumns: plan.mappings
-      .filter((mapping) => mapping.targetField === 'ignore')
-      .map((mapping) => mapping.sourceColumn),
+    columnMappings: mapped,
+    ignoredColumns: ignored,
     compositeColumns: plan.compositeColumns,
     unmappedColumns: plan.unmappedColumns,
     notes: plan.notes,
