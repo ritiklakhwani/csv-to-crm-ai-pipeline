@@ -4,6 +4,7 @@ import type { Logger } from '../../utils/logger';
 import { withRetry } from '../../utils/retry';
 import { sampleRows } from '../csv/analyze';
 import { EMPTY_USAGE, type LlmProvider, type LlmUsage } from '../llm';
+import { normaliseMappingPlan } from './mapping-plan';
 import { buildInferenceUserPrompt, INFERENCE_SYSTEM_PROMPT } from './prompts';
 
 /**
@@ -67,14 +68,20 @@ export async function inferSchema(options: InferSchemaOptions): Promise<InferSch
       },
     );
 
+    // The model's plan can contradict itself; the invariants are enforced here rather than trusted.
+    const plan = normaliseMappingPlan(result.data, headers);
+
     logger.info('Phase 1 complete', {
-      mappedColumns: result.data.mappings.length,
-      dateFormat: result.data.detectedDateFormat,
-      defaultCountryCode: result.data.detectedDefaultCountryCode,
+      mappedColumns: plan.mappings.filter((m) => m.targetField !== 'ignore').length,
+      ignoredColumns: plan.mappings.filter((m) => m.targetField === 'ignore').length,
+      unmappedColumns: plan.unmappedColumns.length,
+      compositeColumns: plan.compositeColumns.length,
+      dateFormat: plan.detectedDateFormat,
+      defaultCountryCode: plan.detectedDefaultCountryCode,
       cached: result.cached,
     });
 
-    return { plan: result.data, usage: result.usage };
+    return { plan, usage: result.usage };
   } catch (error) {
     // An aborted request means the user closed the tab. Everything else means Phase 1 failed, and
     // Phase 2 can still run — it just loses the whole-file hints. Degrading beats failing.
