@@ -6,11 +6,16 @@ import { allowedOrigins, maxFileSizeBytes, type Env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 import { healthRouter } from './routes/health.routes';
+import { importsRouter } from './routes/imports.routes';
+import type { ImportStore } from './services/import-store';
+import type { LlmProvider } from './services/llm';
 import type { Logger } from './utils/logger';
 
 export interface CreateAppOptions {
   env: Env;
   logger: Logger;
+  store: ImportStore;
+  provider: LlmProvider;
 }
 
 /**
@@ -27,7 +32,7 @@ function isStreamingRequest(req: Request): boolean {
  * Assembles the Express app without starting it, so tests can drive it through supertest and the
  * bootstrap in `index.ts` stays a dozen lines of process wiring.
  */
-export function createApp({ env, logger }: CreateAppOptions): Express {
+export function createApp({ env, logger, store, provider }: CreateAppOptions): Express {
   const app = express();
 
   app.disable('x-powered-by');
@@ -59,6 +64,7 @@ export function createApp({ env, logger }: CreateAppOptions): Express {
   app.use(requestLogger(logger));
 
   app.use('/api/v1', healthRouter());
+  app.use('/api/v1', importsRouter({ env, logger, store, provider }));
 
   app.use(notFoundHandler());
   app.use(

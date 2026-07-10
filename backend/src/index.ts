@@ -1,6 +1,8 @@
 import { createApp } from './app';
 import { EnvValidationError, loadEnv } from './config/env';
 import { loadDotenv } from './config/load-dotenv';
+import { ImportStore } from './services/import-store';
+import { createLlmProvider } from './services/llm';
 import { createLogger } from './utils/logger';
 import { APP_VERSION } from './version';
 
@@ -26,7 +28,10 @@ function main(): void {
     pretty: env.NODE_ENV !== 'production',
   });
 
-  const app = createApp({ env, logger });
+  const provider = createLlmProvider(env, logger);
+  const store = new ImportStore();
+
+  const app = createApp({ env, logger, store, provider });
 
   const server = app.listen(env.PORT, () => {
     logger.info('API listening', {
