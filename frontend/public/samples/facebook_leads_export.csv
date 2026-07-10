@@ -1,0 +1,9 @@
+created_time,id,full_name,email,phone_number,city,ad_name,form_name,platform
+2026-05-13T14:20:48Z,l:23849302,John Doe,john.doe@example.com,p:+919876543210,Mumbai,Summer Campaign,Lead Form A,fb
+2026-05-13T14:25:30Z,l:23849303,Sarah Johnson,sarah.johnson@example.com,p:+919876543211,Bangalore,Summer Campaign,Lead Form A,fb
+2026-05-13T14:30:15Z,l:23849304,Rajesh Patel,rajesh.patel@example.com,p:+919876543212,Delhi,Retargeting Q2,Lead Form B,ig
+2026-05-13T14:35:22Z,l:23849305,Priya Singh,priya.singh@example.com,p:+919876543213,Pune,Retargeting Q2,Lead Form B,fb
+2026-05-13T14:41:09Z,l:23849306,Aditya Rao,,p:+919876543214,Hyderabad,Summer Campaign,Lead Form A,ig
+2026-05-13T14:47:55Z,l:23849307,Meera Nair,meera.nair@example.com,,Kochi,Summer Campaign,Lead Form A,fb
+2026-05-13T14:52:03Z,l:23849308,Vikram Desai,vikram.desai@example.com,p:+919876543216,Ahmedabad,Retargeting Q2,Lead Form B,fb
+2026-05-13T15:01:44Z,l:23849309,Ananya Iyer,ananya.iyer@example.com,p:+919876543217,Chennai,Summer Campaign,Lead Form A,ig
