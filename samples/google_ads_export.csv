@@ -1,0 +1,7 @@
+Timestamp,Lead Name,Contact,User column data,Campaign,Lead status,Ad group,Cost
+05/13/2026 14:20:48,John Doe,9876543210,john.doe@example.com,Brand - Exact,Interested,Ad group 1,142.50
+05/14/2026 09:11:02,Sarah Johnson,9876543211,sarah.johnson@example.com,Brand - Exact,Not picked,Ad group 1,138.20
+05/15/2026 16:44:37,Rajesh Patel,9876543212,rajesh.patel@example.com,Generic - Phrase,Converted,Ad group 3,201.75
+05/16/2026 11:05:19,Priya Singh,9876543213,priya.singh@example.com,Generic - Phrase,Spam,Ad group 3,199.00
+05/17/2026 13:30:00,Aditya Rao,9876543214,aditya.rao@example.com,Competitor,Call back,Ad group 2,310.40
+05/18/2026 08:22:41,Meera Nair,9876543215,meera.nair@example.com,Competitor,Do not call,Ad group 2,298.65

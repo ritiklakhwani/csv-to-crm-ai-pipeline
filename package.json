@@ -8,12 +8,12 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @groweasy/backend --filter @groweasy/frontend dev",
+    "dev": "pnpm --parallel -r --if-present dev",
     "dev:backend": "pnpm --filter @groweasy/backend dev",
     "dev:frontend": "pnpm --filter @groweasy/frontend dev",
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
