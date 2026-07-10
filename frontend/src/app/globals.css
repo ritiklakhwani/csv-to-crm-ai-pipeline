@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+/* Class-based dark mode: the `dark:` variant activates when a `.dark` ancestor exists, which
+   useTheme toggles on <html>. Tailwind 4 defaults to prefers-color-scheme, so this override is
+   what makes the manual toggle work. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900 antialiased;
+}
+
+.dark body {
+  @apply bg-neutral-950 text-neutral-100;
+}
+
+/* A thin, unobtrusive scrollbar for the virtualised tables. */
+.thin-scrollbar {
+  scrollbar-width: thin;
+}

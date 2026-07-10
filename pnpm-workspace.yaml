@@ -7,3 +7,4 @@ packages:
 # postinstall to fetch the platform binary, so it is allowlisted explicitly.
 onlyBuiltDependencies:
   - esbuild
+  - sharp
