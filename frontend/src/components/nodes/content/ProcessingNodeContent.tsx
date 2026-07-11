@@ -152,6 +152,31 @@ export function ProcessingNodeContent() {
             />
           </div>
         )}
+
+        {/* Gooey "liquid" loader in the empty space at the foot of the dashboard while extraction is
+            actively running — under the skeleton at first, under the streaming table after. Purely
+            derived from `!done`, so it unmounts the instant the run completes. The inline SVG "goo"
+            filter melts the CSS blob wave into liquid metaballs while keeping it transparent and
+            brand-orange on the glass card (a blur()+contrast() filter would box it and turn it red). */}
+        {!done && (
+          <div className="flex w-full items-center justify-center py-8">
+            <svg aria-hidden width="0" height="0" className="pointer-events-none absolute">
+              <defs>
+                <filter id="fluid-goo">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+                  <feColorMatrix
+                    in="blur"
+                    mode="matrix"
+                    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -4"
+                    result="goo"
+                  />
+                  <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+                </filter>
+              </defs>
+            </svg>
+            <div className="data-fluid-loader" />
+          </div>
+        )}
       </div>
     </div>
   );
