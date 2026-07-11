@@ -82,7 +82,7 @@ export function Navbar() {
         <button
           onMouseEnter={moveTo}
           onClick={toggle}
-          className="nav-pill flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-strong)]"
+          className="nav-pill flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200/80 bg-white text-zinc-500 shadow-[0_4px_12px_rgba(0,0,0,0.1),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(0,0,0,0.05)] transition-all duration-200 hover:bg-[#f4f4f7] hover:text-zinc-900 hover:shadow-[0_6px_16px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(0,0,0,0.05)] active:translate-y-[1px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:border-zinc-800/80 dark:bg-[#1c1d24] dark:text-zinc-400 dark:shadow-[0_4px_12px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-1px_1px_rgba(0,0,0,0.4)] dark:hover:bg-[#22232c] dark:hover:text-zinc-100 dark:hover:shadow-[0_6px_16px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-1px_1px_rgba(0,0,0,0.4)] dark:active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]"
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <span className="flex h-4 w-4 items-center justify-center [view-transition-name:theme-toggle-icon]">
