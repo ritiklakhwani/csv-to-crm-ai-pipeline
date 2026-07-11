@@ -1,96 +1,60 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Header } from '@/components/Header';
-import { Stepper, type Step } from '@/components/Stepper';
-import { PreviewStep } from '@/components/steps/PreviewStep';
-import { ProcessingStep } from '@/components/steps/ProcessingStep';
-import { ResultsStep } from '@/components/steps/ResultsStep';
-import { UploadStep } from '@/components/steps/UploadStep';
-import { useToast } from '@/components/ui/Toast';
-import { parseCsvPreview, type ParsedPreview } from '@/hooks/useCsvParser';
-import { useImport } from '@/hooks/useImport';
+import dynamic from 'next/dynamic';
+import { CanvasSkeleton } from '@/components/flow/CanvasSkeleton';
+import { LayoutActionsProvider } from '@/components/flow/layout-actions';
+import { StackedFlow } from '@/components/flow/StackedFlow';
+import { ArrangeButton } from '@/components/nav/ArrangeButton';
+import { Navbar } from '@/components/nav/Navbar';
+import { MachineProvider } from '@/hooks/machine-context';
+import { useImportMachine } from '@/hooks/useImportMachine';
+import { useMediaQuery, useMounted } from '@/hooks/useMediaQuery';
+
+// The canvas is client-only (React Flow measures the DOM) and heavy, so it is code-split and never
+// ships to mobile, which renders the stacked shell instead.
+const FlowCanvas = dynamic(() => import('@/components/flow/FlowCanvas'), {
+  ssr: false,
+  loading: () => <CanvasSkeleton />,
+});
 
 export default function Page() {
-  const [step, setStep] = useState<Step>('upload');
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<ParsedPreview | null>(null);
-
-  const { state, start, reset } = useImport();
-  const toast = useToast();
-
-  // The pipeline reports completion by flipping status to 'done'; advance the stepper off that.
-  useEffect(() => {
-    if (state.status === 'done') setStep('results');
-  }, [state.status]);
-
-  const handleFileSelected = useCallback(
-    async (selected: File) => {
-      setFile(selected);
-      try {
-        const parsed = await parseCsvPreview(selected);
-        if (parsed.rowCount === 0) {
-          toast.error('That file has no data rows.');
-          return;
-        }
-        setPreview(parsed);
-        setStep('preview');
-      } catch {
-        toast.error('Could not parse that CSV. Is it a valid file?');
-      }
-    },
-    [toast],
-  );
-
-  const handleConfirm = useCallback(() => {
-    if (!file) return;
-    setStep('processing');
-    start(file);
-  }, [file, start]);
-
-  const startOver = useCallback(() => {
-    reset();
-    setFile(null);
-    setPreview(null);
-    setStep('upload');
-  }, [reset]);
+  const machine = useImportMachine();
+  const mounted = useMounted();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1100px] flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
-      <Header />
+    <MachineProvider machine={machine}>
+      {/* LayoutActionsProvider bridges the standalone Arrange button to the canvas's layout reset. */}
+      <LayoutActionsProvider>
+        {/* Raised navbar over a carved-in workspace. On desktop the page is a fixed-height flex column
+            so the workspace fills the remaining space and the canvas auto-fits into it. */}
+        <div className="relative flex min-h-[100dvh] flex-col gap-3 p-3 md:h-[100dvh] md:gap-4 md:overflow-hidden md:p-4">
+          <div className="sticky top-3 z-40 md:static">
+            {/* Navbar + its companion Arrange pill, grouped and centred (w-fit ⇒ the navbar's own
+                mx-auto is a no-op inside, so they sit side by side). */}
+            <div className="mx-auto flex w-fit items-center gap-3">
+              <Navbar />
+              <ArrangeButton />
+            </div>
+          </div>
 
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl dark:text-neutral-50">
-          Import leads from any CSV
-        </h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-500 dark:text-neutral-400">
-          Whatever the column names or layout, the AI maps it to the GrowEasy CRM schema, cleans the
-          data, and enforces your rules.
-        </p>
-      </div>
-
-      <Stepper current={step} />
-
-      <div className="flex-1">
-        {step === 'upload' && <UploadStep onFileSelected={handleFileSelected} />}
-
-        {step === 'preview' && preview && file && (
-          <PreviewStep
-            preview={preview}
-            fileName={file.name}
-            onConfirm={handleConfirm}
-            onBack={startOver}
-          />
-        )}
-
-        {step === 'processing' && (
-          <ProcessingStep state={state} onRetry={handleConfirm} onStartOver={startOver} />
-        )}
-
-        {step === 'results' && state.result && file && (
-          <ResultsStep result={state.result} fileName={file.name} onStartOver={startOver} />
-        )}
-      </div>
-    </main>
+          {!mounted ? (
+            <div className="workspace-panel workspace-dots relative min-h-0 flex-1 overflow-hidden">
+              <CanvasSkeleton />
+            </div>
+          ) : isDesktop ? (
+            <div className="workspace-panel relative min-h-0 flex-1 overflow-hidden">
+              <div className="absolute inset-0">
+                <FlowCanvas />
+              </div>
+            </div>
+          ) : (
+            <div className="workspace-panel workspace-dots min-h-0 flex-1">
+              <StackedFlow />
+            </div>
+          )}
+        </div>
+      </LayoutActionsProvider>
+    </MachineProvider>
   );
 }

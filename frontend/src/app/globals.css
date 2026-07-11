@@ -1,23 +1,582 @@
 @import 'tailwindcss';
 
-/* Class-based dark mode: the `dark:` variant activates when a `.dark` ancestor exists, which
-   useTheme toggles on <html>. Tailwind 4 defaults to prefers-color-scheme, so this override is
-   what makes the manual toggle work. */
+/* Class-based dark mode: the `dark:` variant activates when a `.dark` ancestor exists, which the
+   boot script and useTheme toggle on <html>. Tailwind 4 defaults to prefers-color-scheme, so this
+   override is what makes the manual toggle authoritative. */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Poppins (loaded via next/font in layout.tsx) becomes the default sans everywhere. */
+@theme {
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Theme tokens. The reused inner content (tables, badges, mapping chips) keeps its own dark:
+   Tailwind utilities; these variables theme the *new* surfaces — the canvas, the node shells,
+   the edges, and the loader — so nothing about the flow-canvas aesthetic is hardcoded.
+
+   Light mirrors GrowEasy's real product (white surfaces, warm-orange CTA). Dark is the deep dotted
+   canvas from the spec: near-black field, elevated #141416 cards that float above the grid.
+--------------------------------------------------------------------------------------------- */
+:root {
+  --bg-canvas: #fbfaf9;
+  --dot-color: rgba(15, 23, 42, 0.09);
+  --node-surface: #ffffff;
+  --node-border: rgba(15, 23, 42, 0.1);
+  --node-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 28px -14px rgba(15, 23, 42, 0.22);
+  --node-header: rgba(15, 23, 42, 0.02);
+  /* Premium glass card: translucent surface (reveals the dot grid), a gradient rim that catches
+     light from above, a crisp inner border, and a soft brand-orange glow on hover. */
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --card-border-inner: rgba(15, 23, 42, 0.1);
+  --card-glow: rgba(255, 255, 255, 0.85);
+  --card-top-highlight: rgba(255, 255, 255, 0.65);
+  --card-hover-glow: 0 0 24px rgba(240, 130, 79, 0.14);
+  --accent: #f0824f;
+  --accent-strong: #e26a34;
+  --accent-soft: rgba(240, 130, 79, 0.12);
+  --edge-color: #cfd4da;
+  --edge-active: #f0824f;
+  --text-strong: #1a1c1e;
+  --text-muted: #64748b;
+  --nav-highlight: rgba(255, 255, 255, 0.9);
+  /* Page = raised plane; workspace = recessed panel carved into it. Page is lighter so the carve
+     reads. Nav surface is the brightest, so the navbar reads as lifted above the page. */
+  --page-bg: #f7f6f4;
+  --workspace-bg: #eceae7;
+  --workspace-shadow: inset 0 2px 24px rgba(15, 23, 42, 0.1), inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+  --nav-surface: #ffffff;
+  --dot-color: rgba(15, 23, 42, 0.08);
+}
+
+.dark {
+  --bg-canvas: #0a0a0b;
+  --dot-color: rgba(255, 255, 255, 0.14);
+  --node-surface: #23232a;
+  --node-border: rgba(255, 255, 255, 0.1);
+  --node-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 18px 40px -18px rgba(0, 0, 0, 0.85);
+  --node-header: rgba(255, 255, 255, 0.03);
+  --card-bg: rgba(24, 24, 27, 0.72);
+  --card-border-inner: rgba(255, 255, 255, 0.08);
+  --card-glow: rgba(255, 255, 255, 0.18);
+  --card-top-highlight: rgba(255, 255, 255, 0.06);
+  --card-hover-glow: 0 0 24px rgba(240, 130, 79, 0.2);
+  --accent: #f0824f;
+  --accent-strong: #f4915f;
+  --accent-soft: rgba(240, 130, 79, 0.16);
+  --edge-color: #4a4a52;
+  --edge-active: #f0824f;
+  --text-strong: #f5f5f6;
+  --text-muted: #9aa2af;
+  --nav-highlight: rgba(255, 255, 255, 0.08);
+  /* Page (outside) is the deepest black; the workspace (inside) is a lighter, dotted panel raised
+     on it; nodes are lighter still so they float above the workspace. */
+  --page-bg: #060608;
+  --workspace-bg: #161619;
+  --workspace-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 2px 30px rgba(0, 0, 0, 0.45);
+  --nav-surface: #23232a;
+}
 
 html {
   color-scheme: light dark;
 }
 
 body {
-  @apply bg-neutral-50 text-neutral-900 antialiased;
-}
-
-.dark body {
-  @apply bg-neutral-950 text-neutral-100;
+  @apply antialiased;
+  background: var(--page-bg);
+  color: var(--text-strong);
+  /* The canvas/tables manage their own scrolling; the page itself must never scroll sideways. */
+  overflow-x: hidden;
 }
 
 /* A thin, unobtrusive scrollbar for the virtualised tables. */
 .thin-scrollbar {
   scrollbar-width: thin;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Workspace — the carved-in panel the whole flow happens inside. Deep background, an inset shadow +
+   hairline inner border so it reads as recessed below the raised navbar. The dotted grid lives in
+   here (React Flow's <Background> on desktop; the CSS grid below on the mobile stack / skeleton),
+   so the texture is clipped to the panel.
+--------------------------------------------------------------------------------------------- */
+.workspace-panel {
+  position: relative;
+  border-radius: 24px;
+  background: var(--workspace-bg);
+  box-shadow: var(--workspace-shadow);
+}
+
+.workspace-dots {
+  background-image: radial-gradient(var(--dot-color) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+
+/* Let the workspace panel's deep background and inset shadow show through the canvas. */
+.react-flow {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Node shell — the floating card every node (canvas or stacked) is built from.
+--------------------------------------------------------------------------------------------- */
+.node-shell {
+  position: relative;
+  border-radius: 1rem;
+  /* Glassmorphism — translucent surface + blur so the dot grid softly shows through. */
+  background: var(--card-bg);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid var(--card-border-inner);
+  /* Inner top-edge highlight (light from above) layered over the elevation shadow. */
+  box-shadow:
+    inset 0 1px 0 var(--card-top-highlight),
+    var(--node-shadow);
+  color: var(--text-strong);
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 200ms ease;
+}
+
+/* Outer gradient rim: a 1px ring that fades from a bright top edge to transparent, giving the
+   double-border, lit-from-above look on top of the crisp inner border. Masked so only the ring
+   paints; sits inside the rounded clip so it is never cropped. */
+.node-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, var(--card-glow), transparent 45%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.node-shell:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 var(--card-top-highlight),
+    var(--node-shadow),
+    var(--card-hover-glow);
+}
+
+.node-shell[data-active='true'] {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--card-top-highlight),
+    var(--node-shadow),
+    0 0 0 3px var(--accent-soft);
+}
+
+.node-shell[data-active='true']:hover {
+  box-shadow:
+    inset 0 1px 0 var(--card-top-highlight),
+    var(--node-shadow),
+    0 0 0 3px var(--accent-soft),
+    var(--card-hover-glow);
+}
+
+/* A completed, re-openable card: pointer cursor + a warmer accent ring on hover so it reads as a tab. */
+.node-shell[data-clickable='true'] {
+  cursor: pointer;
+}
+
+.node-shell[data-clickable='true']:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--card-border-inner));
+  box-shadow:
+    inset 0 1px 0 var(--card-top-highlight),
+    var(--node-shadow),
+    0 0 0 3px var(--accent-soft),
+    var(--card-hover-glow);
+}
+
+/* Spotlight content crossfade: when a card gains/loses focus its body swaps (full table ↔ compact
+   summary); fading it in keeps it from looking crushed while the card animates size. */
+@keyframes node-content-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.node-content-fade {
+  animation: node-content-fade 260ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-shell {
+    transition: none;
+  }
+  .node-content-fade {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Perimeter loader — a conic-gradient sweep that runs around the node border while it works
+   (Upload parsing a file, Processing running batches). Reduced motion falls back to a soft pulse.
+--------------------------------------------------------------------------------------------- */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes node-loader-spin {
+  to {
+    --angle: 360deg;
+  }
+}
+
+@keyframes node-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.node-perimeter-loader {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 230deg,
+    color-mix(in srgb, var(--accent) 45%, transparent) 300deg,
+    var(--accent) 350deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: node-loader-spin 1.4s linear infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-perimeter-loader {
+    background: none;
+    -webkit-mask: none;
+    mask: none;
+    box-shadow: 0 0 0 2px var(--accent);
+    animation: node-loader-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   React Flow theming. Import order (RF css after Tailwind, in FlowCanvas) lets these win.
+--------------------------------------------------------------------------------------------- */
+.react-flow__attribution {
+  display: none;
+}
+
+/* Dots read their colour from this variable, so the grid recolours with the theme purely in CSS. */
+.react-flow {
+  --xy-background-pattern-color: var(--dot-color);
+}
+
+/* Idle paths: a muted, sleek zinc line with round ends so joins never look chipped. */
+.react-flow__edge-path {
+  stroke: var(--edge-color);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transition: stroke 200ms ease;
+}
+
+/* The edge into the newly-active node reads as data flowing through it: a brand-orange dashed line
+   with a soft glow, its dashes marching along the path. globals.css loads after React Flow's CSS,
+   so this overrides RF's default `.animated` dash. */
+.react-flow__edge.is-active .react-flow__edge-path {
+  stroke: var(--edge-active);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--edge-active) 45%, transparent));
+  animation: edge-flow 620ms linear infinite;
+}
+
+@keyframes edge-flow {
+  to {
+    /* one dash period (6 + 5) so the march loops seamlessly */
+    stroke-dashoffset: -11;
+  }
+}
+
+/* Minimalist open arrowhead. `context-stroke` makes each arrowhead inherit its own edge's colour —
+   orange on the active edge, muted zinc on idle — while staying CSS-only so the theme flip never
+   re-renders the canvas. The var() fallback covers browsers without context-stroke. */
+.react-flow__arrowhead polyline,
+.react-flow__arrowhead path {
+  fill: none;
+  stroke: var(--edge-color);
+  stroke: context-stroke;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.is-active .react-flow__edge-path {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}
+
+.react-flow__controls {
+  border-radius: 0.6rem;
+  overflow: hidden;
+  box-shadow: var(--node-shadow);
+  border: 1px solid var(--node-border);
+}
+
+.react-flow__controls-button {
+  background: var(--node-surface);
+  border-bottom: 1px solid var(--node-border);
+  color: var(--text-strong);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--accent-soft);
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: var(--edge-color);
+  border: 2px solid var(--node-surface);
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Arrange mode (post-completion). The resize controls are invisible — nothing is drawn (no dots,
+   no lines, no box). Resizing still works: the hit-areas stay grabbable and the browser shows a
+   resize cursor on hover. The only "active card" cue is our own accent ring (.node-shell).
+--------------------------------------------------------------------------------------------- */
+.react-flow__resize-control.handle,
+.react-flow__resize-control.line {
+  opacity: 0;
+  border: none;
+  background: transparent;
+}
+
+/* Suppress React Flow's own selection outline/box on nodes — no marching-ants or border. */
+.react-flow__node.selected,
+.react-flow__node:focus,
+.react-flow__node:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   View Transitions — the dark-mode clip-path reveal. Disable the default crossfade so only the
+   growing/shrinking circle plays. Whichever snapshot the toggle animates must be on top:
+   going to dark, the new (dark) snapshot grows in; returning to light, the old (dark) snapshot
+   shrinks out to reveal the light underneath — so its z-index flips via the `.vt-contract` class.
+--------------------------------------------------------------------------------------------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+:root.vt-contract::view-transition-old(root) {
+  z-index: 9999;
+}
+
+:root.vt-contract::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* The theme-toggle icon animates as its own group, so the sun/moon swap rotates and cross-fades on
+   top of the reveal instead of hard-cutting. */
+::view-transition-group(theme-toggle-icon) {
+  z-index: 10000;
+}
+
+::view-transition-old(theme-toggle-icon),
+::view-transition-new(theme-toggle-icon) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  /* `both` holds the faded-out old icon and the pre-faded new icon at their end states, so neither
+     snaps back to full opacity for a frame when the group's animation ends before the transition. */
+  animation-fill-mode: both;
+  transform-origin: center;
+}
+
+::view-transition-old(theme-toggle-icon) {
+  animation-name: toggle-icon-out;
+}
+
+::view-transition-new(theme-toggle-icon) {
+  animation-name: toggle-icon-in;
+}
+
+@keyframes toggle-icon-out {
+  to {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.4);
+  }
+}
+
+@keyframes toggle-icon-in {
+  from {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(theme-toggle-icon),
+  ::view-transition-new(theme-toggle-icon) {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   3D navbar — a raised, glassy bar: blurred backdrop, a top highlight, and a layered drop shadow
+   so it reads as an elevated surface floating over the canvas rather than a flat strip.
+--------------------------------------------------------------------------------------------- */
+.navbar-3d {
+  background: color-mix(in srgb, var(--nav-surface) 88%, transparent);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--node-border);
+  /* Layered drop shadow + a top inner highlight so the pill reads as a raised, lifted surface. */
+  box-shadow:
+    inset 0 1px 0 var(--nav-highlight),
+    0 12px 28px -10px rgba(15, 23, 42, 0.3),
+    0 2px 6px -2px rgba(15, 23, 42, 0.2);
+}
+
+.dark .navbar-3d {
+  /* Blackish glassmorphism: a dark translucent fill with a soft top sheen, frosted by the blur
+     above, so the pill reads as smoked glass floating on the deep-black page. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)),
+    rgba(14, 14, 18, 0.55);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 16px 40px -12px rgba(0, 0, 0, 0.85),
+    0 2px 8px -2px rgba(0, 0, 0, 0.7);
+}
+
+/* Nav items sit above the shared sliding highlight pill so their labels stay crisp. */
+.nav-pill {
+  position: relative;
+  z-index: 1;
+}
+
+/* One shared glassmorphism "highlight" pill that glides behind whichever nav item is hovered —
+   same glass look as before (translucent fill, backdrop blur, 1px border, top highlight), but a
+   single element whose transform + width animate to match the hovered item. */
+.nav-slide-pill {
+  background: rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 4px 14px rgba(15, 23, 42, 0.12);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
+  will-change: transform, width;
+}
+
+.dark .nav-slide-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* First appear (or re-appear after leaving): place instantly and just fade in — never slide from a
+   stale origin. Only subsequent item-to-item moves glide. */
+.nav-slide-pill[data-instant='true'] {
+  transition: opacity 200ms ease;
+}
+
+/* Reduced motion: fade only, no slide. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-slide-pill {
+    transition: opacity 150ms ease;
+  }
+}
+
+/* Standalone "Arrange" pill (right of the navbar): the same glass-pill hover as the nav items,
+   painted as a fade-in overlay on top of its navbar-3d surface. */
+.nav-arrange::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(15, 23, 42, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events: none;
+}
+
+.nav-arrange:hover::after {
+  opacity: 1;
+}
+
+.dark .nav-arrange::after {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Modal (native <dialog>) — the scrim isolates the panel; the panel reads on-theme.
+--------------------------------------------------------------------------------------------- */
+dialog.app-modal {
+  margin: auto;
+  max-width: min(92vw, 34rem);
+  width: 100%;
+  max-height: 85vh;
+  padding: 0;
+  border: 1px solid var(--node-border);
+  border-radius: 1rem;
+  background: var(--node-surface);
+  color: var(--text-strong);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+dialog.app-modal::backdrop {
+  background: rgba(10, 10, 11, 0.55);
+  backdrop-filter: blur(3px);
 }

@@ -1,102 +1,23 @@
 'use client';
 
-import type { CrmRecord, ImportResult, MappingPlan, SkippedRecord } from '@groweasy/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, openImportStream, uploadCsv } from '@/lib/api';
+import { machineStore } from '@/lib/machine-store';
 import { readSseEvents } from '@/lib/sse';
 
-export type ImportStatus = 'idle' | 'uploading' | 'processing' | 'done' | 'error';
-
-export interface ImportProgress {
-  processedBatches: number;
-  totalBatches: number;
-  processedRows: number;
-  totalRows: number;
-}
-
-export interface ImportState {
-  status: ImportStatus;
-  progress: ImportProgress | null;
-  mappingPlan: MappingPlan | null;
-  /** Filled live as batch_complete events arrive, so the results table can render incrementally. */
-  records: CrmRecord[];
-  skipped: SkippedRecord[];
-  /** The authoritative, source-ordered payload; only set once the import is done. */
-  result: ImportResult | null;
-  error: string | null;
-  activityLog: string[];
-}
-
-const INITIAL: ImportState = {
-  status: 'idle',
-  progress: null,
-  mappingPlan: null,
-  records: [],
-  skipped: [],
-  result: null,
-  error: null,
-  activityLog: [],
-};
-
-export interface UseImport {
-  state: ImportState;
-  start: (file: File) => void;
-  reset: () => void;
-}
-
 /**
- * Drives one import end to end: upload the file, open the SSE stream, and fold the events into
- * render state. The stream is aborted on reset and on unmount so a closed tab or a "start over"
- * click stops the backend burning tokens.
+ * Drives one import end to end: upload the file, open the SSE stream, and fold the events into the
+ * machine store. This is the proven fold from the original `useImport` hook — the transport, the
+ * abort points, and the "swap to the authoritative payload on done" logic are unchanged. The only
+ * difference is the sink: events land in `machineStore` (the hot tier) instead of React state, so a
+ * batch re-renders only the content that selected the changed slice.
+ *
+ * The AbortController lifecycle lives in `useImportMachine`, which owns the orchestration.
  */
-export function useImport(): UseImport {
-  const [state, setState] = useState<ImportState>(INITIAL);
-  const controllerRef = useRef<AbortController | null>(null);
-
-  const abort = useCallback(() => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
-  }, []);
-
-  const reset = useCallback(() => {
-    abort();
-    setState(INITIAL);
-  }, [abort]);
-
-  useEffect(() => abort, [abort]);
-
-  const start = useCallback(
-    (file: File) => {
-      abort();
-      const controller = new AbortController();
-      controllerRef.current = controller;
-
-      setState({ ...INITIAL, status: 'uploading' });
-
-      void run(file, controller.signal, setState).catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setState((prev) => ({
-          ...prev,
-          status: 'error',
-          error: error instanceof ApiError ? error.message : 'The import failed unexpectedly.',
-        }));
-      });
-    },
-    [abort],
-  );
-
-  return { state, start, reset };
-}
-
-async function run(
-  file: File,
-  signal: AbortSignal,
-  setState: React.Dispatch<React.SetStateAction<ImportState>>,
-): Promise<void> {
+export async function runImport(file: File, signal: AbortSignal): Promise<void> {
   const uploaded = await uploadCsv(file, signal);
   if (signal.aborted) return;
 
-  setState((prev) => ({
+  machineStore.set((prev) => ({
     ...prev,
     status: 'processing',
     activityLog: [`Uploaded ${uploaded.fileName} — ${uploaded.rowCount} rows detected`],
@@ -109,7 +30,7 @@ async function run(
 
     switch (event.type) {
       case 'mapping_plan':
-        setState((prev) => ({
+        machineStore.set((prev) => ({
           ...prev,
           mappingPlan: event.plan,
           activityLog: [...prev.activityLog, 'Detected the column mapping for this file'],
@@ -117,7 +38,7 @@ async function run(
         break;
 
       case 'progress':
-        setState((prev) => ({
+        machineStore.set((prev) => ({
           ...prev,
           progress: {
             processedBatches: event.processedBatches,
@@ -129,7 +50,7 @@ async function run(
         break;
 
       case 'batch_complete':
-        setState((prev) => ({
+        machineStore.set((prev) => ({
           ...prev,
           records: [...prev.records, ...event.records],
           skipped: [...prev.skipped, ...event.skipped],
@@ -143,7 +64,7 @@ async function run(
       case 'done':
         // Swap to the authoritative payload: batches finish out of order, so `result.records` is
         // the correctly source-ordered version of what we accumulated live.
-        setState((prev) => ({
+        machineStore.set((prev) => ({
           ...prev,
           status: 'done',
           result: event.result,
@@ -159,8 +80,10 @@ async function run(
         return;
 
       case 'error':
-        setState((prev) => ({ ...prev, status: 'error', error: event.error.message }));
+        machineStore.set((prev) => ({ ...prev, status: 'error', error: event.error.message }));
         return;
     }
   }
 }
+
+export { ApiError };

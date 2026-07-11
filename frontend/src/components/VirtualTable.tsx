@@ -18,6 +18,9 @@ interface VirtualTableProps<T> {
   rows: T[];
   rowHeight?: number;
   maxHeight?: number;
+  /** Fill the parent's height instead of capping at `maxHeight`. Use inside a `flex-1 min-h-0`
+   *  container so a focused card's table uses all remaining vertical space. */
+  fill?: boolean;
   getCell: (row: T, key: string) => string;
   emptyMessage?: string;
 }
@@ -37,6 +40,7 @@ export function VirtualTable<T>({
   rows,
   rowHeight = DEFAULT_ROW_HEIGHT,
   maxHeight = 460,
+  fill = false,
   getCell,
   emptyMessage = 'Nothing to show.',
 }: VirtualTableProps<T>) {
@@ -54,14 +58,23 @@ export function VirtualTable<T>({
 
   if (rows.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
+      <div
+        className={cn(
+          'flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400',
+          fill ? 'h-full' : 'h-40',
+        )}
+      >
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div ref={scrollRef} className="thin-scrollbar relative overflow-auto" style={{ maxHeight }}>
+    <div
+      ref={scrollRef}
+      className={cn('thin-scrollbar relative overflow-auto', fill && 'h-full')}
+      style={fill ? undefined : { maxHeight }}
+    >
       <div style={{ width: totalWidth, minWidth: '100%' }}>
         {/* Sticky header: pinned to the top of the scroll container, scrolls sideways with rows. */}
         <div

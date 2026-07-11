@@ -16,6 +16,7 @@
     "@groweasy/shared": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.14.5",
+    "@xyflow/react": "^12.11.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
     "next": "^16.2.10",
