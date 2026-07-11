@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, ArrowRight, Loader2, RotateCcw } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, RotateCcw } from 'lucide-react';
 import { CRM_COLUMNS } from '@/components/crm-columns';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -52,8 +52,14 @@ export function ProcessingNodeContent() {
     );
   }
 
-  const pct =
-    progress && progress.totalBatches > 0
+  // Once the run is complete, the whole header/bar/status block is derived purely from `status ===
+  // 'done'` — a stable store value — so re-focusing the card (a click) never flips it back into the
+  // "extracting" state or restarts any animation.
+  const done = status === 'done';
+
+  const pct = done
+    ? 100
+    : progress && progress.totalBatches > 0
       ? (progress.processedBatches / progress.totalBatches) * 100
       : 0;
 
@@ -65,8 +71,16 @@ export function ProcessingNodeContent() {
     <div className="flex h-full flex-col gap-3 p-4">
       <div className="flex items-center justify-between text-sm">
         <span className="flex items-center gap-2 font-medium text-neutral-900 dark:text-neutral-50">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
-          {status === 'uploading' ? 'Uploading and parsing…' : 'Extracting records…'}
+          {done ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          ) : (
+            <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
+          )}
+          {done
+            ? 'All records extracted successfully'
+            : status === 'uploading'
+              ? 'Uploading and parsing…'
+              : 'Extracting records…'}
         </span>
         {progress && (
           <span className="text-xs text-[var(--text-muted)]">
@@ -75,29 +89,48 @@ export function ProcessingNodeContent() {
         )}
       </div>
 
-      <ProgressBar value={pct} />
+      {/* Complete: a static bar locked at 100% in success green (no shimmer). In progress: the live
+          brand-orange batch bar. */}
+      {done ? (
+        <div
+          className="h-2 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-500/15"
+          role="progressbar"
+          aria-valuenow={100}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div className="h-full w-full rounded-full bg-emerald-500" />
+        </div>
+      ) : (
+        <ProgressBar value={pct} />
+      )}
 
       <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
-        {progress ? (
+        {done ? (
+          <span className="font-medium text-emerald-600 dark:text-emerald-400">
+            Completed — {records.length.toLocaleString()} records extracted
+          </span>
+        ) : progress ? (
           <span>
             Batch {progress.processedBatches} of {progress.totalBatches}
           </span>
         ) : (
           <span>Starting…</span>
         )}
-        {lastActivity && <span className="ml-3 truncate font-mono">{lastActivity}</span>}
+        {!done && lastActivity && <span className="ml-3 truncate font-mono">{lastActivity}</span>}
       </div>
 
       {mapped.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+        <div className="grid grid-cols-2 gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
           {mapped.map((mapping) => (
             <span
               key={mapping.sourceColumn}
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300"
+              title={`${mapping.sourceColumn} → ${mapping.targetField}`}
+              className="inline-flex w-full min-w-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300"
             >
-              <span className="font-medium">{mapping.sourceColumn}</span>
-              <ArrowRight className="h-2.5 w-2.5 opacity-60" />
-              <span className="font-mono">{mapping.targetField}</span>
+              <span className="truncate font-medium">{mapping.sourceColumn}</span>
+              <ArrowRight className="h-2.5 w-2.5 shrink-0 opacity-60" />
+              <span className="truncate font-mono">{mapping.targetField}</span>
             </span>
           ))}
         </div>
