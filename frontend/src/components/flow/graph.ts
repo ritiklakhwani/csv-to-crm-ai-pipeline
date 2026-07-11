@@ -1,4 +1,4 @@
-import { MarkerType, type Edge, type Node, type XYPosition } from '@xyflow/react';
+import { type Edge, type Node, type XYPosition } from '@xyflow/react';
 import type { Phase } from '@/hooks/useImportMachine';
 
 export type NodeKind = 'upload' | 'preview' | 'processing' | 'results';
@@ -173,23 +173,14 @@ const EDGE_SPECS: EdgeSpec[] = [
  * dark-mode transition. Edges therefore depend only on `phase`.
  */
 export function buildEdges(phase: Phase): Edge[] {
-  return EDGE_SPECS.map((spec) => {
-    const active = phase === spec.activeOn;
-    return {
-      id: spec.id,
-      source: spec.source,
-      target: spec.target,
-      type: 'default',
-      animated: active,
-      ...(active ? { className: 'is-active' } : {}),
-      // A clean, minimalist open arrowhead (thin V) rather than the bulky filled triangle. Its colour
-      // comes from CSS (context-stroke), so it matches each edge and stays theme-switch-safe.
-      markerEnd: {
-        type: MarkerType.Arrow,
-        width: 20,
-        height: 20,
-        strokeWidth: 1.6,
-      },
-    };
-  });
+  return EDGE_SPECS.map((spec) => ({
+    id: spec.id,
+    source: spec.source,
+    target: spec.target,
+    // Custom "data pipe" edge (PipelineEdge). `active` lights the neon flow into the current step; the
+    // edge draws its own layered rails + geometric arrowhead, so no markerEnd is needed here. Colours
+    // stay in CSS so a theme switch never re-renders the canvas.
+    type: 'pipeline',
+    data: { active: phase === spec.activeOn },
+  }));
 }

@@ -33,6 +33,7 @@ import { resolveArrangeCollisions, type CardRect, type Extent } from '@/componen
 import { FocusProvider, type FocusValue } from '@/components/flow/focus-context';
 import { useLayoutActions } from '@/components/flow/layout-actions';
 import { nodeTypes } from '@/components/flow/nodes';
+import { edgeTypes } from '@/components/flow/PipelineEdge';
 import { useMachine } from '@/hooks/machine-context';
 
 const FIT_OPTIONS = { padding: 0.06, duration: 0 } as const;
@@ -449,6 +450,7 @@ function FlowInner() {
           onNodeDragStop={onNodeDragStop}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           minZoom={0.2}
           maxZoom={1.5}
           zoomOnScroll={false}

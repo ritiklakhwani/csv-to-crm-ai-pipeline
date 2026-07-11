@@ -296,42 +296,80 @@ body {
 }
 
 /* Idle paths: a muted, sleek zinc line with round ends so joins never look chipped. */
-.react-flow__edge-path {
-  stroke: var(--edge-color);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  transition: stroke 200ms ease;
-}
-
-/* The edge into the newly-active node reads as data flowing through it: a brand-orange dashed line
-   with a soft glow, its dashes marching along the path. globals.css loads after React Flow's CSS,
-   so this overrides RF's default `.animated` dash. */
-.react-flow__edge.is-active .react-flow__edge-path {
+/* ---------------------------------------------------------------------------------------------
+   Pipeline edges (PipelineEdge.tsx) — a futuristic double-rail "data pipe": a blurred glow halo, a
+   thick band whose exposed edges read as the two outer parallel lines, and a neon core running the
+   channel between them. Colours come from the theme edge vars so a theme switch stays pure-CSS.
+--------------------------------------------------------------------------------------------- */
+.pipe-glow {
   stroke: var(--edge-active);
-  stroke-width: 2;
-  stroke-dasharray: 6 5;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--edge-active) 45%, transparent));
-  animation: edge-flow 620ms linear infinite;
+  stroke-width: 7;
+  stroke-linecap: round;
+  opacity: 0.1;
+  filter: blur(2px);
+  transition: opacity 200ms ease;
 }
 
-@keyframes edge-flow {
+.pipe-rails {
+  stroke: var(--edge-color);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.pipe-core {
+  stroke: var(--edge-active);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0.4;
+  transition: opacity 200ms ease;
+}
+
+/* Solid, crisp arrowhead — high contrast so it pops against both backgrounds (no stroke, no filter,
+   no partial opacity). Deep brand tone on the light canvas, sharp brand-orange on the dark grid. */
+.pipe-arrowhead {
+  fill: #c2592a;
+  stroke: none;
+}
+
+.dark .pipe-arrowhead {
+  fill: #f0824f;
+}
+
+/* Active pipe: the core lights to full brand-orange, its dashes march down the channel, the halo
+   swells, the arrowhead lights up, and a data frame travels the pipe. */
+.pipe-edge.is-active .pipe-core {
+  opacity: 1;
+  stroke-width: 2.6;
+  stroke-dasharray: 7 6;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--edge-active) 60%, transparent));
+  animation: pipe-flow 600ms linear infinite;
+}
+
+.pipe-edge.is-active .pipe-glow {
+  opacity: 0.42;
+  stroke-width: 8;
+}
+
+.pipe-pulse {
+  fill: var(--edge-active);
+  filter: drop-shadow(0 0 3px var(--edge-active));
+}
+
+@keyframes pipe-flow {
   to {
-    /* one dash period (6 + 5) so the march loops seamlessly */
-    stroke-dashoffset: -11;
+    /* one dash period (7 + 6) so the march loops seamlessly */
+    stroke-dashoffset: -13;
   }
 }
 
-/* Minimalist open arrowhead. `context-stroke` makes each arrowhead inherit its own edge's colour —
-   orange on the active edge, muted zinc on idle — while staying CSS-only so the theme flip never
-   re-renders the canvas. The var() fallback covers browsers without context-stroke. */
-.react-flow__arrowhead polyline,
-.react-flow__arrowhead path {
-  fill: none;
-  stroke: var(--edge-color);
-  stroke: context-stroke;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+@media (prefers-reduced-motion: reduce) {
+  .pipe-edge.is-active .pipe-core {
+    animation: none;
+    stroke-dasharray: none;
+  }
+  .pipe-pulse {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
