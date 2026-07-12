@@ -667,3 +667,10 @@ dialog.app-modal::backdrop {
   background: rgba(10, 10, 11, 0.55);
   backdrop-filter: blur(3px);
 }
+
+/* Dark: an ultra-deep matte charcoal panel with a crisp low-visibility hairline, matching the node
+   cards' premium surface (only the Docs/About modals use .app-modal). */
+.dark dialog.app-modal {
+  background: #0d0e11;
+  border-color: rgba(255, 255, 255, 0.06);
+}
