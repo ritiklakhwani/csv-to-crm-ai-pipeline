@@ -10,7 +10,9 @@ streams the results back live.
 https://github.com/user-attachments/assets/68c84078-4243-4c73-85dd-7d3101548503
 
 > **Live app:** _add URL_
->
+> 
+> **Demo Video Link:** https://youtu.be/u4DVNBgRr6g
+> 
 > **Repo:** https://github.com/ritiklakhwani/csv-to-crm-ai-pipeline
 
 ## The problem
