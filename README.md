@@ -1,9 +1,6 @@
 # GrowEasy CSV Importer
 
-An AI-powered importer that takes a lead CSV in any layout, from any tool, and turns it into
-clean, validated GrowEasy CRM records. Upload a Facebook Leads export, a real-estate CRM dump or
-a hand-made spreadsheet; the system works out which column is which, cleans every row, and
-streams the results back live.
+Every lead export names its columns differently. This importer doesn't care. Upload a Facebook Leads export, a real-estate CRM dump or a hand-made spreadsheet: a two-phase AI pipeline works out which column is which, normalizes every row against the GrowEasy CRM schema, and streams validated records back as they extract.
 
 ### Demo
 
