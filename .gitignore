@@ -33,7 +33,10 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 
-# local planning material — not part of the deliverable
-reference-readmes/
+# local planning material and tooling — not part of the deliverable
 reference-screenshots/
+reference-readmes/
+.agents/
+skills-lock.json
+logos/
 
