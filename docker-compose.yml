@@ -1,0 +1,47 @@
+# One command boots the whole importer:
+#
+#   cp backend/.env.example backend/.env   # add your OPENAI_API_KEY first
+#   docker compose up --build
+#
+# web  -> http://localhost:3000
+# api  -> http://localhost:4000  (health: /api/v1/health)
+#
+# The browser talks to the api directly, so its published port must match the
+# NEXT_PUBLIC_API_URL baked into the web image below.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - '4000:4000'
+    # local secrets (OPENAI_API_KEY etc.) — copy backend/.env.example to backend/.env
+    env_file: backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      ALLOWED_ORIGIN: http://localhost:3000
+      # the response memo cache is a dev convenience; never in a deployed container
+      LLM_CACHE: 'false'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/api/v1/health']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # inlined into the client bundle at build time; the browser calls this origin
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - '3000:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

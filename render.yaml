@@ -1,0 +1,48 @@
+# Render blueprint for the backend API. Connect the repo on render.com and it picks this up
+# ("New +" -> "Blueprint"). Only OPENAI_API_KEY and ALLOWED_ORIGIN need values in the dashboard:
+# set ALLOWED_ORIGIN to the deployed Vercel origin once the frontend is live.
+#
+# SSE note: Render's proxy does not buffer text/event-stream, and the API also sends
+# Cache-Control: no-transform + X-Accel-Buffering: no, so live progress streams through.
+
+services:
+  - type: web
+    name: groweasy-csv-importer-api
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: OPENAI_API_KEY
+        sync: false # set in the Render dashboard, never in the repo
+      - key: ALLOWED_ORIGIN
+        sync: false # the deployed frontend origin, e.g. https://<app>.vercel.app
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_MODEL_INFERENCE
+        value: gpt-4.1-mini-2025-04-14
+      - key: LLM_MODEL_EXTRACTION
+        value: gpt-4.1-mini-2025-04-14
+      - key: LLM_CACHE
+        value: 'false'
+      - key: LLM_MAX_RETRIES
+        value: 3
+      - key: LLM_TEMPERATURE
+        value: 0
+      - key: BATCH_SIZE
+        value: 25
+      - key: MAX_CONCURRENCY
+        value: 4
+      - key: MAX_ROWS
+        value: 2000
+      - key: MAX_FILE_SIZE_MB
+        value: 5
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 20
