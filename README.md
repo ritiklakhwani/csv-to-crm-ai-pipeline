@@ -7,9 +7,7 @@ streams the results back live.
 
 ### Demo
 
-<!-- Drag and drop the demo video file into the blank line below while editing this file on
-     github.com. GitHub uploads it and inserts a user-attachments link that renders as an
-     embedded player. The link must sit on its own line. Delete this comment afterwards. -->
+
 
 
 
@@ -27,12 +25,7 @@ CRM fields without inventing data, and without a human ever editing a mapping by
 
 ## How it works
 
-<!-- ARCHITECTURE DIAGRAM: add the excalidraw screenshot on the blank line below, either by
-     committing it (e.g. docs/architecture.png and ![Architecture](docs/architecture.png))
-     or by dragging the image into this spot while editing on github.com.
-     Once the screenshot is in, delete the mermaid fallback block below it. -->
-
-
+<img width="2920" height="2168" alt="architecture" src="https://github.com/user-attachments/assets/573dd710-6a94-478a-8141-700652ee6ef2" />
 
 ```mermaid
 flowchart LR
